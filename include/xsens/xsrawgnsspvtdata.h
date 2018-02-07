@@ -15,6 +15,9 @@
 #ifndef XSRAWGNSSPVTDATA_H
 #define XSRAWGNSSPVTDATA_H
 
+#include <sstream>
+#include <string>
+
 #include "pstdint.h"
 
 #ifdef _MSC_VER
@@ -98,6 +101,21 @@ struct XsRawGnssPvtData
 		// direct memory comparison is allowed because all fields line up properly
 		return std::memcmp(this, &other, sizeof(XsRawGnssPvtData)) == 0;
 	}
+
+  inline std::string toString() {
+    std::stringstream ss;
+
+    ss << "m_itow: " << m_itow << ", ";
+    ss << "m_year: " << m_year << ", ";
+    ss << "m_month: " << (int)m_month << ", ";
+    ss << "m_day: " << (int)m_day << ", ";
+    ss << "m_hour: " << (int)m_hour << ", ";
+    ss << "m_min: " << (int)m_min << ", ";
+    ss << "m_sec: " << (int)m_sec << ", ";
+    ss << "m_valid: " << (int)m_valid << ", ";
+
+    return ss.str();
+  }
 #endif
 
 };

@@ -6,6 +6,7 @@ find_package(Threads REQUIRED)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 add_subdirectory(xstypes)
 add_subdirectory(xcommunication)

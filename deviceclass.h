@@ -39,10 +39,9 @@
 
 class StreamInterface;
 
-class DeviceClass
-{
+class DeviceClass {
 public:
-	DeviceClass(void);
+	DeviceClass() = default;
 	~DeviceClass(void);
 
 	bool openPort(const XsPortInfo& portInfo);

@@ -16,6 +16,8 @@ XsensImu::ImuData::ImuData() {
   temperature = 0;
   altitude = 0;
   quaternion = XsQuaternion();
+  gpsData = XsRawGnssPvtData();
+  utcTime = XsUtcTime();
 }
 
 XsensImu::ImuData XsensImu::ImuData::operator+(const XsensImu::ImuData &rhs) {
@@ -32,12 +34,15 @@ XsensImu::ImuData XsensImu::ImuData::operator+(const XsensImu::ImuData &rhs) {
   z = quaternion.z() + rhs.quaternion.z();
   data.quaternion = XsQuaternion(w, x, y, z);
   data.accel = accel + (rhs.accel.empty() ? accel : rhs.accel);
-  data.rateOfTurn = rateOfTurn + (rhs.rateOfTurn.empty() ? rateOfTurn : rhs.rateOfTurn);
+  data.rateOfTurn =
+      rateOfTurn + (rhs.rateOfTurn.empty() ? rateOfTurn : rhs.rateOfTurn);
   data.magField = magField + (rhs.magField.empty() ? magField : rhs.magField);
   data.latLon = latLon + (rhs.latLon.empty() ? latLon : rhs.latLon);
   data.velocity = velocity + (rhs.velocity.empty() ? velocity : rhs.velocity);
   p.m_pressure = pressure.m_pressure + rhs.pressure.m_pressure;
   data.pressure = p;
+  data.gpsData = rhs.gpsData;
+  data.utcTime = rhs.utcTime;
 
   return data;
 }
@@ -62,6 +67,8 @@ XsensImu::ImuData XsensImu::ImuData::operator/(const double &n) {
   data.velocity = velocity / n;
   p.m_pressure = pressure.m_pressure / n;
   data.pressure = p;
+  data.gpsData = gpsData;
+  data.utcTime = utcTime;
 
   return data;
 }
@@ -99,6 +106,9 @@ std::string XsensImu::ImuData::toString() {
   }
   os << std::endl;
   os << "Pressure: " << pressure.m_pressure << std::endl;
+
+  os << "Time: " << (int)utcTime.m_year << std::endl;
+  os << gpsData.toString() << std::endl;
 
   return os.str();
 }
@@ -164,14 +174,16 @@ XsensImu::XsensImu(std::string port, int baudRate) {
     XsOutputConfiguration rot(XDI_RateOfTurn, 0xFFFF);
     XsOutputConfiguration magf(XDI_MagneticField, 0xFFFF);
     XsOutputConfiguration temp(XDI_Temperature, 0xFFFF);
-    XsOutputConfiguration pos(XDI_LatLon, 0xFFFF);
     XsOutputConfiguration velo(XDI_VelocityXYZ, 0xFFFF);
     XsOutputConfiguration pres(XDI_BaroPressure, 0xFFFF);
     XsOutputConfiguration alt(XDI_AltitudeEllipsoid, 0xFFFF);
     XsOutputConfiguration packetCount(XDI_PacketCounter, 0xFFFF);
     XsOutputConfiguration raw_c(XDI_RawAccGyrMagTemp, 0xFFFF);
-    XsOutputConfiguration gpsdata(XDI_GnssPvtData, 0xFFFF);
-    XsOutputConfiguration gpsinfo(XDI_GnssSatInfo, 0xFFFF);
+    XsOutputConfiguration gpstime(XDI_Itow, 0xFFFF);
+    XsOutputConfiguration pos(XDI_LatLon, 0xFFFF);
+    XsOutputConfiguration gpsdata(XDI_GnssPvtData, 0x0004);
+    XsOutputConfiguration gpsinfo(XDI_GnssSatInfo, 0x0004);
+
 
     XsOutputConfigurationArray configArray;
 
@@ -180,13 +192,15 @@ XsensImu::XsensImu(std::string port, int baudRate) {
     configArray.push_back(rot);
     configArray.push_back(magf);
     configArray.push_back(temp);
-    configArray.push_back(pos);
     configArray.push_back(velo);
     configArray.push_back(pres);
     configArray.push_back(alt);
     configArray.push_back(packetCount);
+    configArray.push_back(gpstime);
+    configArray.push_back(pos);
     configArray.push_back(gpsdata);
     configArray.push_back(gpsinfo);
+
 
     if (!device.setOutputConfiguration(configArray)) {
       throw std::runtime_error("Could not configure MTmk4 device. Aborting.");
@@ -254,7 +268,13 @@ XsensImu::ImuData XsensImu::getData() {
 
     // position data
     XsVector latLon = packet.latitudeLongitude();
-    auto gpsData = packet.gpsPvtData();
+
+    // GPS data
+    bool hasGps = packet.containsRawGnssPvtData();
+    bool hasLatLon = packet.containsLatitudeLongitude();
+    auto gpsData = packet.rawGnssPvtData();
+    auto utcTime = packet.utcTime();
+
 
     // XsVector latLon = packet.positionLLA();
 
@@ -275,6 +295,8 @@ XsensImu::ImuData XsensImu::getData() {
     newData.latLon = latLon;
     newData.velocity = velocity;
     newData.pressure = pressure;
+    newData.gpsData = gpsData;
+    newData.utcTime = utcTime;
 
     msgs.clear();
     XsTime::msleep(0);

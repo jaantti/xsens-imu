@@ -75,3 +75,4 @@ dkms.conf
 /nbproject/
 /cmake-build-debug/
 .idea/
+bin/

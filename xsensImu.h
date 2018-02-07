@@ -30,6 +30,8 @@ public:
     XsVector latLon;
     XsVector velocity;
     XsPressure pressure;
+    XsRawGnssPvtData gpsData;
+    XsUtcTime utcTime;
 
     ImuData();
 
